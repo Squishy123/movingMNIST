@@ -70,13 +70,14 @@ class MovingMNISTDataset(Dataset):
         self.cache_built = True
 
         self.CACHE_LOCATION = Path(self.root + f"/frames_{self.num_frames}")
-        self.BATCH_SIZE = 500
+        self.BATCH_SIZE = 1000
 
         # Download file
         if not path.exists(self.root + "/mnist_test_seq.npy"):
             if not self.download:
                 raise RuntimeError('Dataset not found. Use download=True to download it.')
 
+            print("DOWNLOADING DATASET")
             res = requests.get(DATASET_NETWORK_URL)
             open(root + "/mnist_test_seq.npy", 'wb').write(res.content)
 
@@ -86,7 +87,7 @@ class MovingMNISTDataset(Dataset):
         # Build cache
         if self.cache:
             if not path.exists(self.root + f"/frames_{self.num_frames}"):
-                # if True:
+            #if True:
                 self.cache_built = False
                 self.build_cache()
                 self.cache_built = True
@@ -127,23 +128,34 @@ class MovingMNISTDataset(Dataset):
                 start = istart // self.BATCH_SIZE
                 stop = istop // self.BATCH_SIZE
 
+                # print(start)
+                # print(stop)
+
                 combined_data = None
                 for i in range(start, stop+1):
                     data = np.load(str(self.CACHE_LOCATION) + f"/CACHE_{i // self.BATCH_SIZE}.npz")["state"]
+                    #print(data.shape)
                     item = torch.tensor(data).float()
 
                     if combined_data == None:
                         combined_data = item
                     else:
                         combined_data = torch.cat((combined_data, item), 0)
-                item = combined_data[(istart % self.BATCH_SIZE)+start*self.BATCH_SIZE:(istop % self.BATCH_SIZE)+stop*self.BATCH_SIZE]
+                #item = combined_data[(istart % self.BATCH_SIZE)+start*self.BATCH_SIZE:(istop % self.BATCH_SIZE)+stop*self.BATCH_SIZE]
+                item = combined_data[istart % self.BATCH_SIZE: istart % self.BATCH_SIZE + istop-istart]
+                # print("VALUES")
+                # print((istart % self.BATCH_SIZE)+start*self.BATCH_SIZE)
+                # print((istop % self.BATCH_SIZE)+stop*self.BATCH_SIZE)
+                # print(combined_data.shape)
             else:
-                data = np.load(str(self.CACHE_LOCATION) + f"/CACHE_{index // self.BATCH_SIZE}.npz")["state"]
+                num_examples = self.data.shape[1]-self.num_frames+1
+                data = np.load(str(self.CACHE_LOCATION) + f"/CACHE_{index // self.data.shape[0]}.npz")["state"]
                 item = torch.tensor(data[index % self.BATCH_SIZE]).float()
         else:
             item = torch.tensor(self.data[index]).float()
 
         img = item
+        target = item
 
         transform = self.transform
         target_transform = self.target_transform

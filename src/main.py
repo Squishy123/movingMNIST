@@ -1,16 +1,17 @@
 from moving_mnist_dataset import MovingMNISTDataset
 from context_encoder import ContextAutoencoder
-from callbacks import plot_loss_accuracy
+from callbacks import plot_loss_accuracy, plot_reconstructions
 
 import matplotlib.pyplot as plt
 from torchvision import transforms, utils
 import torch
+import numpy as np
 
 NUM_FRAMES = 5
-BATCH_SIZE = 100
-TOTAL_EPOCHS = 100
+BATCH_SIZE = 1000
+TOTAL_EPOCHS = 10
 SAVE_INTERVAL = 100
-PLT_INTERVAL = 100
+PLT_INTERVAL = 10000
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -25,10 +26,16 @@ c.imshow(original_data[0][3])
 plt.show()
 exit()
 '''
+# print(len(original_data))
+#rint(original_data[60000].shape)
+# exit()
 
-training_data = original_data[:int(len(original_data)*0.9)]
-test_data = original_data[int(len(original_data)*0.9):]
-
+#training_data = original_data[:int(len(original_data)*0.9)]
+#test_data = original_data[int(len(original_data)*0.9):]
+training_data_start = 0
+training_data_end = int(len(original_data)*0.9)
+test_data_start = int(len(original_data)*0.9)
+test_data_end = len(original_data)
 
 model = ContextAutoencoder(channels=NUM_FRAMES).to(DEVICE)
 optim = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -39,11 +46,11 @@ for epoch in range(TOTAL_EPOCHS):
     print(f"STARTING EPOCH: {epoch+1}")
 
     i_count = 0
-    for episode in range(len(training_data)//BATCH_SIZE):
-        print("LOL")
+    epoch_loss = 0
+    for episode in range((training_data_end-training_data_start)//BATCH_SIZE):
         optim.zero_grad()
 
-        current_state = training_data[episode*BATCH_SIZE:(episode+1)*BATCH_SIZE].to(DEVICE)
+        current_state = original_data[episode*BATCH_SIZE:(episode+1)*BATCH_SIZE].to(DEVICE)
         computed_state = model(current_state)
 
         predicted_loss = torch.nn.functional.mse_loss(computed_state, current_state)
@@ -56,17 +63,20 @@ for epoch in range(TOTAL_EPOCHS):
 
         optim.step()
 
+        i_count += BATCH_SIZE
+        epoch_loss += predicted_loss.item()
+
         print(f"EPISODE {episode+1} LOSS: {predicted_loss.item()/BATCH_SIZE}")
 
-        # if i_count % PLT_INTERVAL == 0:
-        #    plot_loss_accuracy(epoch, episode, predicted_loss.item()/BATCH_SIZE)
+        if i_count % PLT_INTERVAL == 0:
+            with torch.no_grad():
+                x_sample = original_data[np.random.randint(test_data_start, test_data_end-1)].unsqueeze(0).to(DEVICE)
+                x_pred = model(x_sample)
 
-        i_count += BATCH_SIZE
+                err = torch.nn.functional.mse_loss(x_pred, x_sample)
+                plot_loss_accuracy(epoch, episode, epoch_loss/i_count, -err.item())
+                plot_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), NUM_FRAMES)
 
-    '''with torch.no_grad():
-        x_sample = test_data[np.random.randint(0, len(test_data))]
-        x_pred = model(x_sample)
 
-        err = torch.nn.functional.MSELoss(x_pred, x_sample)
-        plot_loss_accuracy(epoch, episode, epoch_loss/i_count, err.item())
-    '''
+   
+    
