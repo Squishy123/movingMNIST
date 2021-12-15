@@ -70,7 +70,7 @@ class MovingMNISTDataset(Dataset):
         self.cache_built = True
 
         self.CACHE_LOCATION = Path(self.root + f"/frames_{self.num_frames}")
-        self.BATCH_SIZE = 1000
+        self.BATCH_SIZE = 500
 
         # Download file
         if not path.exists(self.root + "/mnist_test_seq.npy"):
@@ -85,16 +85,13 @@ class MovingMNISTDataset(Dataset):
 
         # Build cache
         if self.cache:
-            # if not path.exists(self.root + f"/frames_{self.num_frames}"):
-            if True:
+            if not path.exists(self.root + f"/frames_{self.num_frames}"):
+                # if True:
                 self.cache_built = False
                 self.build_cache()
                 self.cache_built = True
 
     def build_cache(self):
-        num_examples = self.data.shape[1]-self.num_frames+1
-        total_examples = self.data.shape[0] * num_examples
-
         self.CACHE_LOCATION.mkdir(parents=True, exist_ok=True)
 
         print("BUILDING CACHE")
@@ -102,13 +99,17 @@ class MovingMNISTDataset(Dataset):
             print(f"{i+1}/{len(self)//self.BATCH_SIZE}")
             data = self[i*self.BATCH_SIZE:(i+1)*self.BATCH_SIZE]
             cache_state = data[:, :]
-            cache_state = cache_state.unfold(1, self.num_frames, 1).permute((0, 4, 1, 2, 3))
+            cache_state = cache_state.unfold(1, self.num_frames+1, 1).permute((0, 4, 1, 2, 3))
             cache_state = cache_state.reshape(cache_state.shape[0] * cache_state.shape[1], cache_state.shape[2], cache_state.shape[3], cache_state.shape[4])
 
             np.savez(str(self.CACHE_LOCATION) + f"/CACHE_{i}.npz", state=cache_state)
 
     def __len__(self):
-        return len(self.data)
+        if not self.cache_built:
+            return len(self.data)
+        num_examples = self.data.shape[1]-self.num_frames+1
+        total_examples = self.data.shape[0] * num_examples
+        return total_examples
 
     def __getitem__(self, index):
         if self.cache and self.cache_built:
