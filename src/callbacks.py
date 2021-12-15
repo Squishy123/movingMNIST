@@ -17,7 +17,7 @@ def plot_loss_accuracy(epoch, episode, loss, accuracy):
 def plot_reconstructions(epoch, episode, actual, predicted, NUM_FRAMES=10):
     recon_fig, ax= plt.subplots(2, NUM_FRAMES, sharex='col', sharey='row')
 
-    ax[0][0].set_title(f"Sample Reconstruction at Epoch {epoch+1}, Episode {episode+1}")
+    ax[0][NUM_FRAMES//2].set_title(f"Sample Reconstruction at Epoch {epoch+1}, Episode {episode+1}")
 
     for i in range(NUM_FRAMES):
         ax[0][i].imshow(actual[i])

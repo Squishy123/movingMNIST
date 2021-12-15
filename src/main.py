@@ -7,7 +7,7 @@ from torchvision import transforms, utils
 import torch
 import numpy as np
 
-NUM_FRAMES = 5
+NUM_FRAMES = 1
 BATCH_SIZE = 1000
 TOTAL_EPOCHS = 10
 SAVE_INTERVAL = 100
@@ -16,7 +16,7 @@ PLT_INTERVAL = 10000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 original_data = MovingMNISTDataset(num_frames=NUM_FRAMES)
-
+print(original_data[0].shape)
 '''
 print(original_data[0:100].shape)
 fig, (a, b, c) = plt.subplots(1, 3)
@@ -37,15 +37,15 @@ training_data_end = int(len(original_data)*0.9)
 test_data_start = int(len(original_data)*0.9)
 test_data_end = len(original_data)
 
-model = ContextAutoencoder(channels=NUM_FRAMES).to(DEVICE)
+model = ContextAutoencoder(channels=10-NUM_FRAMES+1).to(DEVICE)
 optim = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 # Training loop
 print("BEGINNING TRAINING")
+i_count = 0
 for epoch in range(TOTAL_EPOCHS):
     print(f"STARTING EPOCH: {epoch+1}")
 
-    i_count = 0
     epoch_loss = 0
     for episode in range((training_data_end-training_data_start)//BATCH_SIZE):
         optim.zero_grad()
@@ -75,7 +75,7 @@ for epoch in range(TOTAL_EPOCHS):
 
                 err = torch.nn.functional.mse_loss(x_pred, x_sample)
                 plot_loss_accuracy(epoch, episode, epoch_loss/i_count, -err.item())
-                plot_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), NUM_FRAMES)
+                plot_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), 10-NUM_FRAMES+1)
 
 
    

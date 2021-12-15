@@ -100,8 +100,11 @@ class MovingMNISTDataset(Dataset):
             print(f"{i+1}/{len(self)//self.BATCH_SIZE}")
             data = self[i*self.BATCH_SIZE:(i+1)*self.BATCH_SIZE]
             cache_state = data[:, :]
-            cache_state = cache_state.unfold(1, self.num_frames+1, 1).permute((0, 4, 1, 2, 3))
+            #print(cache_state.shape)
+            cache_state = cache_state.unfold(1, self.num_frames, 1).permute((0, 4, 1, 2, 3))
+            #print(cache_state.shape)
             cache_state = cache_state.reshape(cache_state.shape[0] * cache_state.shape[1], cache_state.shape[2], cache_state.shape[3], cache_state.shape[4])
+            #print(cache_state.shape)
 
             np.savez(str(self.CACHE_LOCATION) + f"/CACHE_{i}.npz", state=cache_state)
 
