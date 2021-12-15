@@ -54,16 +54,23 @@ transform: Array = Array of torchvision transforms to apply to the input images
 target_transform: Array = Array of torchvision transforms to apply to the target images
 download: Boolean = Whether or not to download the dataset
 frame_skip: Integer = Number of frames to skip to reduce size
+num_frames: Integer = Number of frames to consider for each example
 """
 
 
 class MovingMNISTDataset(Dataset):
-    def __init__(self, root=str(DEFAULT_DATASET_LOCATION), transform=default_image_transform, target_transform=None, download=True, frame_skip=2):
+    def __init__(self, root=str(DEFAULT_DATASET_LOCATION), transform=default_image_transform, target_transform=None, download=True, frame_skip=2, num_frames=1, cache=True):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
         self.download = download
         self.frame_skip = frame_skip
+        self.num_frames = num_frames
+        self.cache = cache
+        self.cache_built = True
+
+        self.CACHE_LOCATION = Path(self.root + f"/frames_{self.num_frames}")
+        self.BATCH_SIZE = 1000
 
         # Download file
         if not path.exists(self.root + "/mnist_test_seq.npy"):
@@ -76,11 +83,65 @@ class MovingMNISTDataset(Dataset):
         # Load file and transpose to pytorch format
         self.data = np.load(self.root + "/mnist_test_seq.npy").transpose(1, 0, 2, 3)[:, ::self.frame_skip]
 
+        # Build cache
+        if self.cache:
+            # if not path.exists(self.root + f"/frames_{self.num_frames}"):
+            if True:
+                self.cache_built = False
+                self.build_cache()
+                self.cache_built = True
+
+    def build_cache(self):
+        num_examples = self.data.shape[1]-self.num_frames+1
+        total_examples = self.data.shape[0] * num_examples
+
+        self.CACHE_LOCATION.mkdir(parents=True, exist_ok=True)
+
+        print("BUILDING CACHE")
+        for i in range(len(self)//self.BATCH_SIZE):
+            print(f"{i+1}/{len(self)//self.BATCH_SIZE}")
+            data = self[i*self.BATCH_SIZE:(i+1)*self.BATCH_SIZE]
+            cache_state = data[:, :]
+            cache_state = cache_state.unfold(1, self.num_frames, 1).permute((0, 4, 1, 2, 3))
+            cache_state = cache_state.reshape(cache_state.shape[0] * cache_state.shape[1], cache_state.shape[2], cache_state.shape[3], cache_state.shape[4])
+
+            np.savez(str(self.CACHE_LOCATION) + f"/CACHE_{i}.npz", state=cache_state)
+
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        item = torch.tensor(self.data[index]).float()
+        if self.cache and self.cache_built:
+            if type(index) is slice:
+                istart = index.start
+                istop = index.stop
+                if index.start == None:
+                    istart = 0
+                if index.stop == None:
+                    istop = istart + self.BATCH_SIZE
+
+                # print(istart)
+                # print(istop)
+
+                start = istart // self.BATCH_SIZE
+                stop = istop // self.BATCH_SIZE
+
+                combined_data = None
+                for i in range(start, stop+1):
+                    data = np.load(str(self.CACHE_LOCATION) + f"/CACHE_{i // self.BATCH_SIZE}.npz")["state"]
+                    item = torch.tensor(data).float()
+
+                    if combined_data == None:
+                        combined_data = item
+                    else:
+                        combined_data = torch.cat((combined_data, item), 0)
+                item = combined_data[(istart % self.BATCH_SIZE)+start*self.BATCH_SIZE:(istop % self.BATCH_SIZE)+stop*self.BATCH_SIZE]
+            else:
+                data = np.load(str(self.CACHE_LOCATION) + f"/CACHE_{index // self.BATCH_SIZE}.npz")["state"]
+                item = torch.tensor(data[index % self.BATCH_SIZE]).float()
+        else:
+            item = torch.tensor(self.data[index]).float()
+
         img = item
 
         transform = self.transform
