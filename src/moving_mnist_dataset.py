@@ -3,6 +3,7 @@
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
+import torch
 
 import numpy as np
 
@@ -11,7 +12,8 @@ from os import path
 import requests
 
 default_image_transform = transforms.Compose([
-    transforms.ToTensor(),
+    # transforms.ToPILImage(),
+    # transforms.ToTensor(),
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
 ])
@@ -36,7 +38,7 @@ class AddGaussianNoise(object):
 
 noisy_transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize(32),
+    # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
     AddGaussianNoise(0., 1.)
 ])
@@ -78,13 +80,31 @@ class MovingMNISTDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, index):
-        item = self.data[index]
+        item = torch.tensor(self.data[index]).float()
+        img = item
 
-        if self.transform != None:
-            img = self.transform(item).permute(1, 2, 0)
+        transform = self.transform
+        target_transform = self.target_transform
 
-        if self.target_transform != None:
-            target = self.target_transform(item).permute(1, 2, 0)
+        # multi select
+        if len(item.shape) > 3:
+            if transform != None:
+                img = np.array([transform(img[i]).numpy() for i in range(len(img))])
+                img = torch.tensor(img)
+
+            if target_transform != None:
+                target = np.array([transform(target[i]) for i in range(len(target))])
+                target = torch.tensor(target)
+            else:
+                return img
+
+            return img, target
+
+        if transform != None:
+            img = transform(item)
+
+        if target_transform != None:
+            target = target_transform(item)
         else:
             return img
 
