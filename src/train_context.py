@@ -18,7 +18,7 @@ NUM_FRAMES = 1
 BATCH_SIZE = 1000
 TOTAL_EPOCHS = 500
 SAVE_INTERVAL = 10000
-PLT_INTERVAL = 10000
+PLT_INTERVAL = 5000
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -77,14 +77,14 @@ noisy_transform = transforms.Compose([
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
     AddGaussianNoise(0., 1.),
-    FrameDropout(2)
+    FrameDropout(5)
 ])
 
 
-original_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=default_image_transform)
-noisy_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=noisy_transform)
+original_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=default_image_transform, cache=False)
+noisy_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=noisy_transform, cache=False)
 
-# print(original_data[0].shape)
+print(len(original_data))
 # print(noisy_data[0].shape)
 
 # print(original_data[0:100].shape)

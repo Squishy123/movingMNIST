@@ -13,6 +13,7 @@ TOTAL_EPOCHS = 2
 SAVE_INTERVAL = 10000
 PLT_INTERVAL = 10000
 
+'''
 epoch_data = np.load("results/epoch_data.npz")
 print(epoch_data["epoch_loss"].shape)
 print(epoch_data["epoch_accuracy"][0])
@@ -22,9 +23,13 @@ checkpoint = torch.load("weights/model_weight_10_90.pth")
 model.load_state_dict(checkpoint['model_state_dict'])
 epoch = checkpoint['epoch']
 episode = checkpoint['episode']
-
+'''
 
 original_data = MovingMNISTDataset(num_frames=NUM_FRAMES)
+
+print(len(original_data))
+exit()
+
 
 training_data_start = 0
 training_data_end = int(len(original_data)*0.9)

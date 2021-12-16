@@ -137,7 +137,7 @@ class MovingMNISTDataset(Dataset):
             np.savez(str(self.CACHE_LOCATION) + f"/CACHE_{i}.npz", state=cache_state)
 
     def __len__(self):
-        if not self.cache_built:
+        if not self.cache_built or not self.cache:
             return len(self.data)
         num_examples = self.data.shape[1]-self.num_frames+1
         total_examples = self.data.shape[0] * num_examples
