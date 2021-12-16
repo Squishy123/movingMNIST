@@ -23,12 +23,13 @@ default_image_transform = transforms.Compose([
 
 
 class AddGaussianNoise(object):
-    def __init__(self, mean=0., std=1.):
+    def __init__(self, mean=0., std=1., noise_factor=0.4):
         self.std = std
         self.mean = mean
+        self.noise_factor = noise_factor
 
     def __call__(self, tensor):
-        noisy = tensor + torch.randn(tensor.size()) * self.std + self.mean
+        noisy = tensor + self.noise_factor*torch.randn(tensor.size()) * self.std + self.mean
         noisy = torch.clip(noisy, 0., 1.)
         return noisy
 
@@ -36,11 +37,34 @@ class AddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
+class FrameDropout(object):
+    def __init__(self, num_frame_drop=5):
+        self.num_frame_drop = num_frame_drop
+
+    def __call__(self, tensor):
+        if self.num_frame_drop == 0:
+            return tensor
+
+        # generate dropout indices
+        dropout_indices = []
+        for i in range(self.num_frame_drop):
+            num = np.random.randint(0, len(tensor))
+            while not num in dropout_indices:
+                num = np.random.randint(0, len(tensor))
+            dropout_indices.append(num)
+
+        print(dropout_indices)
+        print(tensor.shape)
+
+        return
+
+
 noisy_transform = transforms.Compose([
-    transforms.ToTensor(),
+    # transforms.ToTensor(),
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
-    AddGaussianNoise(0., 1.)
+    AddGaussianNoise(0., 1., 10),
+    FrameDropout(5)
 ])
 
 DATASET_NETWORK_URL = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
@@ -87,7 +111,7 @@ class MovingMNISTDataset(Dataset):
         # Build cache
         if self.cache:
             if not path.exists(self.root + f"/frames_{self.num_frames}"):
-            #if True:
+                # if True:
                 self.cache_built = False
                 self.build_cache()
                 self.cache_built = True
@@ -98,13 +122,17 @@ class MovingMNISTDataset(Dataset):
         print("BUILDING CACHE")
         for i in range(len(self)//self.BATCH_SIZE):
             print(f"{i+1}/{len(self)//self.BATCH_SIZE}")
-            data = self[i*self.BATCH_SIZE:(i+1)*self.BATCH_SIZE]
+            if self.target_transform:
+                data, _ = self[i*self.BATCH_SIZE:(i+1)*self.BATCH_SIZE]
+            else:
+                data = self[i*self.BATCH_SIZE:(i+1)*self.BATCH_SIZE]
+
             cache_state = data[:, :]
-            #print(cache_state.shape)
+            # print(cache_state.shape)
             cache_state = cache_state.unfold(1, self.num_frames, 1).permute((0, 4, 1, 2, 3))
-            #print(cache_state.shape)
+            # print(cache_state.shape)
             cache_state = cache_state.reshape(cache_state.shape[0] * cache_state.shape[1], cache_state.shape[2], cache_state.shape[3], cache_state.shape[4])
-            #print(cache_state.shape)
+            # print(cache_state.shape)
 
             np.savez(str(self.CACHE_LOCATION) + f"/CACHE_{i}.npz", state=cache_state)
 
@@ -137,7 +165,7 @@ class MovingMNISTDataset(Dataset):
                 combined_data = None
                 for i in range(start, stop+1):
                     data = np.load(str(self.CACHE_LOCATION) + f"/CACHE_{i // self.BATCH_SIZE}.npz")["state"]
-                    #print(data.shape)
+                    # print(data.shape)
                     item = torch.tensor(data).float()
 
                     if combined_data == None:
@@ -170,7 +198,7 @@ class MovingMNISTDataset(Dataset):
                 img = torch.tensor(img)
 
             if target_transform != None:
-                target = np.array([transform(target[i]) for i in range(len(target))])
+                target = np.array([transform(target[i]).numpy() for i in range(len(target))])
                 target = torch.tensor(target)
             else:
                 return img

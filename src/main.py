@@ -16,7 +16,7 @@ PLT_INTERVAL = 40000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 original_data = MovingMNISTDataset(num_frames=NUM_FRAMES)
-#print(original_data[0].shape)
+# print(original_data[0].shape)
 '''
 print(original_data[0:100].shape)
 fig, (a, b, c) = plt.subplots(1, 3)
@@ -27,7 +27,7 @@ plt.show()
 exit()
 '''
 # print(len(original_data))
-#rint(original_data[60000].shape)
+# rint(original_data[60000].shape)
 # exit()
 
 #training_data = original_data[:int(len(original_data)*0.9)]
@@ -78,12 +78,9 @@ for epoch in range(TOTAL_EPOCHS):
                 err = torch.nn.functional.mse_loss(x_pred, x_sample)
                 accuracy = -err.item()
                 plot_loss_accuracy(epoch, episode, epoch_loss/i_count, accuracy)
-                plot_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), 10-NUM_FRAMES+1)
+                plot_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), 10)
 
-    #if i_count % SAVE_INTERVAL == 0:
+    # if i_count % SAVE_INTERVAL == 0:
     # SAVE EVERY EPOCH
     save_model(epoch, episode, optim, model)
     save_epoch_data(epoch, episode, epoch_loss/i_count, accuracy)
-
-   
-    
