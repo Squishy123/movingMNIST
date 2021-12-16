@@ -64,7 +64,7 @@ noisy_transform = transforms.Compose([
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
     AddGaussianNoise(0., 1., 10),
-    FrameDropout(5)
+    FrameDropout(2)
 ])
 
 DATASET_NETWORK_URL = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"

@@ -77,7 +77,7 @@ noisy_transform = transforms.Compose([
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
     AddGaussianNoise(0., 1.),
-    FrameDropout(5)
+    FrameDropout(2)
 ])
 
 
@@ -119,7 +119,7 @@ for epoch in range(TOTAL_EPOCHS):
 
         current_state = original_data[episode*BATCH_SIZE:(episode+1)*BATCH_SIZE].to(DEVICE)
         noisy_state = noisy_data[episode*BATCH_SIZE:(episode+1)*BATCH_SIZE].to(DEVICE)
-        computed_state = model(current_state)
+        computed_state = model(noisy_state)
 
         predicted_loss = torch.nn.functional.mse_loss(computed_state, current_state)
 
