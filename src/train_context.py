@@ -53,7 +53,8 @@ class FrameDropout(object):
         return dropout
 
     def __call__(self, tensor):
-        if self.num_frame_drop == 0:
+        # print(tensor.shape)
+        if self.num_frame_drop == 0 or tensor.shape[0] <= 1:
             return tensor
 
         dropout = self.dropout(tensor)
@@ -83,15 +84,15 @@ noisy_transform = transforms.Compose([
 original_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=default_image_transform)
 noisy_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=noisy_transform)
 
-print(original_data[0].shape)
-print(noisy_data[0].shape)
+# print(original_data[0].shape)
+# print(noisy_data[0].shape)
 
 # print(original_data[0:100].shape)
 '''
 fig, (a, b, c) = plt.subplots(1, 3)
 a.imshow(noisy_transform(original_data[0][1].unsqueeze(0)).squeeze(0))
 b.imshow(noisy_data[0][2])
-c.imshow(original_data[0][3])
+c.imshow(original_data[0][2])
 plt.show()
 exit()
 '''
@@ -138,8 +139,9 @@ for epoch in range(TOTAL_EPOCHS):
 
         if i_count % PLT_INTERVAL == 0 and i_count != 0:
             with torch.no_grad():
-                x_sample = original_data[np.random.randint(test_data_start, test_data_end-1)].unsqueeze(0).to(DEVICE)
-                x_noisy = noisy_data[np.random.randint(test_data_start, test_data_end-1)].unsqueeze(0).to(DEVICE)
+                idx = np.random.randint(test_data_start, test_data_end-1)
+                x_sample = original_data[idx].unsqueeze(0).to(DEVICE)
+                x_noisy = noisy_data[idx].unsqueeze(0).to(DEVICE)
                 x_pred = model(x_noisy)
 
                 err = torch.nn.functional.mse_loss(x_pred, x_sample)
