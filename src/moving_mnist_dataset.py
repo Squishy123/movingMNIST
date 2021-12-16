@@ -108,7 +108,7 @@ num_frames: Integer = Number of frames to consider for each example
 
 
 class MovingMNISTDataset(Dataset):
-    def __init__(self, root=str(DEFAULT_DATASET_LOCATION), transform=default_image_transform, target_transform=None, download=True, frame_skip=2, num_frames=1, cache=True):
+    def __init__(self, root=str(DEFAULT_DATASET_LOCATION), transform=default_image_transform, target_transform=None, download=True, frame_skip=2, num_frames=1, cache=False):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform

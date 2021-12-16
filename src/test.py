@@ -1,4 +1,4 @@
-from moving_mnist_dataset import MovingMNISTDataset
+from moving_mnist_dataset import MovingMNISTDataset, pred_transform
 from context_encoder import ContextAutoencoder
 from callbacks import plot_loss_accuracy, plot_reconstructions, save_epoch_data, save_model
 
@@ -19,7 +19,8 @@ model.load_state_dict(checkpoint['model_state_dict'])
 epoch = checkpoint['epoch']
 episode = checkpoint['episode']
 
-original_data = MovingMNISTDataset(num_frames=NUM_FRAMES)
+original_data = MovingMNISTDataset(num_frames=NUM_FRAMES, cache=False)
+noisy_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=pred_transform, cache=False)
 
 print(len(original_data))
 exit()
