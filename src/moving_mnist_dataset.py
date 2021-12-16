@@ -67,7 +67,7 @@ class LastDropout(object):
 
     def __call__(self, tensor):
         # print(tensor.shape)
-        if self.num_frame_drop == 0 or tensor.shape[0] <= 1:
+        if tensor.shape[0] <= 1:
             return tensor
 
         dropout = tensor[0:self.dropout_index]
@@ -80,7 +80,7 @@ noisy_transform = transforms.Compose([
     # transforms.ToTensor(),
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
-    AddGaussianNoise(0., 1., 10),
+    AddGaussianNoise(0., 1.),
     RandomFrameDropout(5)
 ])
 
@@ -88,7 +88,6 @@ pred_transform = transforms.Compose([
     # transforms.ToTensor(),
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
-    AddGaussianNoise(0., 1., 10),
     LastDropout()
 ])
 
