@@ -37,6 +37,8 @@ def plot_reconstructions(epoch, episode, actual, predicted, NUM_FRAMES=10):
         ax[1][i].imshow(predicted[i])
 
     recon_fig.savefig(str(RESULTS_PATH) + f"/reconstruction_{epoch+1}_{episode+1}.png")
+    plt.close(recon_fig)
+
 
 def save_model(epoch, episode, optim, model, path=str(WEIGHTS_PATH)):
     torch.save({

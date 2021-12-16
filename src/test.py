@@ -18,7 +18,7 @@ print(epoch_data["epoch_loss"].shape)
 print(epoch_data["epoch_accuracy"][0])
 
 model = ContextAutoencoder(channels=10-NUM_FRAMES+1)
-checkpoint = torch.load("weights/model_weight_2_90.pth")
+checkpoint = torch.load("weights/model_weight_10_90.pth")
 model.load_state_dict(checkpoint['model_state_dict'])
 epoch = checkpoint['epoch']
 episode = checkpoint['episode']

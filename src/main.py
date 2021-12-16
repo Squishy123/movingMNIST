@@ -11,7 +11,7 @@ NUM_FRAMES = 1
 BATCH_SIZE = 1000
 TOTAL_EPOCHS = 500
 SAVE_INTERVAL = 10000
-PLT_INTERVAL = 10000
+PLT_INTERVAL = 40000
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
