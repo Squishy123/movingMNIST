@@ -58,7 +58,7 @@ class FrameDropout(object):
             return tensor
 
         dropout = self.dropout(tensor)
-        for i in range(0, self.num_frame_drop):
+        for i in range(0, self.num_frame_drop-1):
             dropout = self.dropout(dropout)
         '''
         # generate dropout indices
@@ -105,10 +105,18 @@ test_data_end = len(original_data)
 model = ContextAutoencoder(channels=10-NUM_FRAMES+1).to(DEVICE)
 optim = torch.optim.Adam(model.parameters(), lr=1e-3)
 
+# Load 
+checkpoint = torch.load("weights/noise_0/model_weight_601_9.pth")
+model.load_state_dict(checkpoint['model_state_dict'])
+optim.load_state_dict(checkpoint['optimizer_state_dict'])
+epoch_c = checkpoint['epoch']
+episode_c = checkpoint['episode']
+
 # Training loop
 print("BEGINNING TRAINING")
 i_count = 0
-for epoch in range(TOTAL_EPOCHS):
+#for epoch in range(TOTAL_EPOCHS):
+for epoch in range(600, TOTAL_EPOCHS):
     print(f"STARTING EPOCH: {epoch+1}")
 
     epoch_loss = 0
@@ -145,11 +153,16 @@ for epoch in range(TOTAL_EPOCHS):
                 err = torch.nn.functional.mse_loss(x_pred, x_sample)
                 vol = x_sample.shape[0]*x_sample.shape[1]*x_sample.shape[2]*x_sample.shape[3]
                 accuracy = 1 - err.item()/vol
-                plot_loss_accuracy(epoch, episode, epoch_loss/e_count, accuracy, prefix="noise")
-                plot_noisy_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), x_noisy.squeeze(0).cpu().numpy(), 10, prefix="noise")
+                plot_loss_accuracy(epoch, episode, epoch_loss/e_count, accuracy, prefix="noise_636")
+                plot_noisy_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), x_noisy.squeeze(0).cpu().numpy(), 10, prefix="noise_636")
+
+                del err
+                del x_sample
+                del x_noisy
+                del x_pred
 
         print(f"EPISODE {episode+1} LOSS: {predicted_loss.item()/BATCH_SIZE} SAMPLE_ACCURACY: {accuracy}")
 
     if epoch % SAVE_INTERVAL == 0:
-        save_model(epoch, episode, optim, model, prefix="noise")
-        save_epoch_data(epoch, episode, epoch_loss/i_count, accuracy, prefix="noise")
+        save_model(epoch, episode, optim, model, prefix="noise_636")
+        save_epoch_data(epoch, episode, epoch_loss/i_count, accuracy, prefix="noise_636")
