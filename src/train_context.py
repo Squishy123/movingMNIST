@@ -15,70 +15,12 @@ WEIGHTS_PATH = Path(str(ROOT) + "/weights/noise")
 WEIGHTS_PATH.mkdir(parents=True, exist_ok=True)
 
 NUM_FRAMES = 1
-BATCH_SIZE = 1000 # samples
+BATCH_SIZE = 1000  # samples
 TOTAL_EPOCHS = 5000
-SAVE_INTERVAL = 100 # in epochs
-PLT_INTERVAL = 5000 # in samples
+SAVE_INTERVAL = 100  # in epochs
+PLT_INTERVAL = 5000  # in samples
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-# https://discuss.pytorch.org/t/how-to-add-noise-to-mnist-dataset-when-using-pytorch/59745
-# https://ai.plainenglish.io/denoising-autoencoder-in-pytorch-on-mnist-dataset-a76b8824e57e
-
-
-class AddGaussianNoise(object):
-    def __init__(self, mean=0., std=1., noise_factor=0.4):
-        self.std = std
-        self.mean = mean
-        self.noise_factor = noise_factor
-
-    def __call__(self, tensor):
-        noisy = tensor + self.noise_factor*torch.randn(tensor.size()) * self.std + self.mean
-        noisy = torch.clip(noisy, 0., 1.)
-        return noisy
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
-
-
-class FrameDropout(object):
-    def __init__(self, num_frame_drop=5):
-        self.num_frame_drop = num_frame_drop
-
-    def dropout(self, tensor):
-        idx = np.random.randint(0, 10/NUM_FRAMES)
-        dropout = tensor[0:idx]
-        noise = torch.randn(tensor[idx].shape).unsqueeze(0)
-        dropout = torch.cat((dropout, noise, tensor[idx+1:]))
-        return dropout
-
-    def __call__(self, tensor):
-        # print(tensor.shape)
-        if self.num_frame_drop == 0 or tensor.shape[0] <= 1:
-            return tensor
-
-        dropout = self.dropout(tensor)
-        for i in range(0, self.num_frame_drop-1):
-            dropout = self.dropout(dropout)
-        '''
-        # generate dropout indices
-        dropout_indices = []
-        for i in range(self.num_frame_drop):
-            num = np.random.randint(0, 10/NUM_FRAMES)
-            while not num in dropout_indices:
-                num = np.random.randint(0, 10/NUM_FRAMES)
-            dropout_indices.append(num)
-        '''
-        return dropout
-
-
-noisy_transform = transforms.Compose([
-    # transforms.ToTensor(),
-    # transforms.Resize(32),
-    transforms.Normalize((0.1307,), (0.3081,)),
-    AddGaussianNoise(0., 1.),
-    FrameDropout(5)
-])
 
 
 original_data = MovingMNISTDataset(num_frames=NUM_FRAMES, transform=default_image_transform, cache=False)
@@ -105,7 +47,7 @@ test_data_end = len(original_data)
 model = ContextAutoencoder(channels=10-NUM_FRAMES+1).to(DEVICE)
 optim = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-# Load 
+# Load
 checkpoint = torch.load("weights/noise_0/model_weight_601_9.pth")
 model.load_state_dict(checkpoint['model_state_dict'])
 optim.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -115,7 +57,7 @@ episode_c = checkpoint['episode']
 # Training loop
 print("BEGINNING TRAINING")
 i_count = 0
-#for epoch in range(TOTAL_EPOCHS):
+# for epoch in range(TOTAL_EPOCHS):
 for epoch in range(600, TOTAL_EPOCHS):
     print(f"STARTING EPOCH: {epoch+1}")
 

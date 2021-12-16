@@ -37,26 +37,43 @@ class AddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
-class FrameDropout(object):
-    def __init__(self, num_frame_drop=5):
+class RandomFrameDropout(object):
+    def __init__(self, num_frame_drop=5, num_frames=10):
         self.num_frame_drop = num_frame_drop
+        self.num_frames = num_frames
+
+    def dropout(self, tensor):
+        idx = np.random.randint(0, self.num_frames)
+        dropout = tensor[0:idx]
+        noise = torch.randn(tensor[idx].shape).unsqueeze(0)
+        dropout = torch.cat((dropout, noise, tensor[idx+1:]))
+        return dropout
 
     def __call__(self, tensor):
-        if self.num_frame_drop == 0:
+        # print(tensor.shape)
+        if self.num_frame_drop == 0 or tensor.shape[0] <= 1:
             return tensor
 
-        # generate dropout indices
-        dropout_indices = []
-        for i in range(self.num_frame_drop):
-            num = np.random.randint(0, len(tensor))
-            while not num in dropout_indices:
-                num = np.random.randint(0, len(tensor))
-            dropout_indices.append(num)
+        dropout = self.dropout(tensor)
+        for i in range(0, self.num_frame_drop):
+            dropout = self.dropout(dropout)
 
-        print(dropout_indices)
-        print(tensor.shape)
+        return dropout
 
-        return
+
+class LastDropout(object):
+    def __init__(self, dropout_index=5):
+        self.dropout_index = dropout_index
+
+    def __call__(self, tensor):
+        # print(tensor.shape)
+        if self.num_frame_drop == 0 or tensor.shape[0] <= 1:
+            return tensor
+
+        dropout = tensor[0:self.dropout_index]
+        dropout = torch.cat((dropout, torch.randn(tensor[self.dropout_index:].shape)))
+
+        return dropout
 
 
 noisy_transform = transforms.Compose([
@@ -64,7 +81,15 @@ noisy_transform = transforms.Compose([
     # transforms.Resize(32),
     transforms.Normalize((0.1307,), (0.3081,)),
     AddGaussianNoise(0., 1., 10),
-    FrameDropout(2)
+    RandomFrameDropout(5)
+])
+
+pred_transform = transforms.Compose([
+    # transforms.ToTensor(),
+    # transforms.Resize(32),
+    transforms.Normalize((0.1307,), (0.3081,)),
+    AddGaussianNoise(0., 1., 10),
+    LastDropout()
 ])
 
 DATASET_NETWORK_URL = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
