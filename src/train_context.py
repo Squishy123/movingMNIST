@@ -15,10 +15,10 @@ WEIGHTS_PATH = Path(str(ROOT) + "/weights/noise")
 WEIGHTS_PATH.mkdir(parents=True, exist_ok=True)
 
 NUM_FRAMES = 1
-BATCH_SIZE = 1000
-TOTAL_EPOCHS = 500
-SAVE_INTERVAL = 10000
-PLT_INTERVAL = 5000
+BATCH_SIZE = 1000 # samples
+TOTAL_EPOCHS = 5000
+SAVE_INTERVAL = 100 # in epochs
+PLT_INTERVAL = 5000 # in samples
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -135,8 +135,6 @@ for epoch in range(TOTAL_EPOCHS):
         e_count += BATCH_SIZE
         epoch_loss += predicted_loss.item()
 
-        print(f"EPISODE {episode+1} LOSS: {predicted_loss.item()/BATCH_SIZE}")
-
         if i_count % PLT_INTERVAL == 0 and i_count != 0:
             with torch.no_grad():
                 idx = np.random.randint(test_data_start, test_data_end-1)
@@ -145,11 +143,13 @@ for epoch in range(TOTAL_EPOCHS):
                 x_pred = model(x_noisy)
 
                 err = torch.nn.functional.mse_loss(x_pred, x_sample)
-                accuracy = -err.item()
+                vol = x_sample.shape[0]*x_sample.shape[1]*x_sample.shape[2]*x_sample.shape[3]
+                accuracy = 1 - err.item()/vol
                 plot_loss_accuracy(epoch, episode, epoch_loss/e_count, accuracy, prefix="noise")
                 plot_noisy_reconstructions(epoch, episode, x_sample.squeeze(0).cpu().numpy(), x_pred.squeeze(0).cpu().numpy(), x_noisy.squeeze(0).cpu().numpy(), 10, prefix="noise")
 
-    # if i_count % SAVE_INTERVAL == 0:
-    # SAVE EVERY EPOCH
-    save_model(epoch, episode, optim, model, prefix="noise")
-    save_epoch_data(epoch, episode, epoch_loss/i_count, accuracy, prefix="noise")
+        print(f"EPISODE {episode+1} LOSS: {predicted_loss.item()/BATCH_SIZE} SAMPLE_ACCURACY: {accuracy}")
+
+    if epoch % SAVE_INTERVAL == 0:
+        save_model(epoch, episode, optim, model, prefix="noise")
+        save_epoch_data(epoch, episode, epoch_loss/i_count, accuracy, prefix="noise")
