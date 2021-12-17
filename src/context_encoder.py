@@ -42,3 +42,10 @@ class ContextAutoencoder(nn.Module):
         x = self.bottleneck(x)
         x = self.decoder(x)
         return x
+
+'''
+x = torch.randn(1000, 10, 64, 64)
+model = ContextAutoencoder(10)
+model(x)
+torch.onnx.export(model, x, "context_autoencoder.onnx", input_names=['input'], output_names=['output'], do_constant_folding=True)
+'''
