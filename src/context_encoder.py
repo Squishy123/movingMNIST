@@ -22,6 +22,11 @@ class ContextAutoencoder(nn.Module):
             ('encoder_relu3', nn.LeakyReLU()),
         ]))
 
+        self.bottleneck = nn.Sequential(OrderedDict([
+            ('bottleneck_conv1', nn.Conv2d(64, 64, kernel_size=(1, 1))),
+            ('bottleneck_relu1', nn.ReLU()),
+        ]))
+
         self.decoder = nn.Sequential(OrderedDict([
             ('decoder_Tconv1', nn.ConvTranspose2d(64, 32, kernel_size=7)),
             ('decoder_relu1', nn.ReLU()),
@@ -34,5 +39,13 @@ class ContextAutoencoder(nn.Module):
     # forward pass
     def forward(self, x):
         x = self.encoder(x)
+        x = self.bottleneck(x)
         x = self.decoder(x)
         return x
+
+'''
+x = torch.randn(1000, 10, 64, 64)
+model = ContextAutoencoder(10)
+model(x)
+torch.onnx.export(model, x, "context_autoencoder.onnx", input_names=['input'], output_names=['output'], do_constant_folding=True)
+'''
