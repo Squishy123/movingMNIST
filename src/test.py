@@ -41,7 +41,7 @@ test_data_start = int(len(original_data)*0.9)
 test_data_end = len(original_data)
 
 with torch.no_grad():
-    idx = np.random.randint(10)
+    idx = np.random.randint(test_data_start, test_data_end)
     x_sample = original_data[idx].unsqueeze(0).to(DEVICE)
     x_noisy = noisy_data[idx].unsqueeze(0).to(DEVICE)
     x_pred = model(x_noisy)

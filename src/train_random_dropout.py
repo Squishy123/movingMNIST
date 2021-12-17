@@ -76,6 +76,8 @@ for epoch in range(TOTAL_EPOCHS):
         epoch_loss += predicted_loss.item()
 
         if i_count % PLT_INTERVAL == 0 and i_count != 0:
+            save_epoch_data(epoch, episode, epoch_loss/e_count, accuracy, prefix=PREFIX)
+
             with torch.no_grad():
                 idx = np.random.randint(test_data_start, test_data_end-1)
                 x_sample = original_data[idx].unsqueeze(0).to(DEVICE)
@@ -93,8 +95,7 @@ for epoch in range(TOTAL_EPOCHS):
                 del x_noisy
                 del x_pred
 
-        print(f"EPISODE {episode+1} LOSS: {predicted_loss.item()/BATCH_SIZE} SAMPLE_ACCURACY: {accuracy}")
+        print(f"EPISODE {episode+1} LOSS: {predicted_loss.item()/e_count} SAMPLE_ACCURACY: {accuracy}")
 
     if epoch % SAVE_INTERVAL == 0:
         save_model(epoch, episode, optim, model, prefix=PREFIX)
-        save_epoch_data(epoch, episode, epoch_loss/i_count, accuracy, prefix=PREFIX)
